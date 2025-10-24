@@ -7,11 +7,13 @@ const BillModel = {
         throw new Error('Missing required data for bill calculation');
       }
 
+      // Initialize person-wise totals
       const personAmounts = {};
       people.forEach(person => {
         personAmounts[person] = 0;
       });
 
+      // Process each dish
       const processedDishes = dishes.map(dish => {
         const { name, price, sharedBy } = dish;
 
@@ -35,13 +37,16 @@ const BillModel = {
         };
       });
 
+      // Subtotal before taxes and discounts
       const subtotal = dishes.reduce((sum, dish) => sum + dish.price, 0);
       const gstPercent = parseFloat(gst) || 0;
       const serviceChargePercent = parseFloat(serviceCharge) || 0;
+
       const gstAmount = (subtotal * gstPercent) / 100;
       const serviceChargeAmount = (subtotal * serviceChargePercent) / 100;
       const totalBeforeDiscount = subtotal + gstAmount + serviceChargeAmount;
 
+      // Calculate total discount
       let discountAmount = 0;
       if (discount) {
         if (discount.type === 'percentage') {
@@ -54,13 +59,17 @@ const BillModel = {
       const totalAmount = totalBeforeDiscount - discountAmount;
       const totalPersonSubtotal = Object.values(personAmounts).reduce((sum, amt) => sum + amt, 0);
 
+      // 👇 Split discount equally among all people
+      const equalDiscountShare = discountAmount / people.length;
+
+      // Calculate final amounts per person
       const finalPeople = Object.keys(personAmounts).map(person => {
         const personSubtotal = personAmounts[person];
         const proportion = totalPersonSubtotal > 0 ? personSubtotal / totalPersonSubtotal : 0;
         const personGst = gstAmount * proportion;
         const personServiceCharge = serviceChargeAmount * proportion;
-        const personDiscount = discountAmount * proportion;
-        const finalAmount = personSubtotal + personGst + personServiceCharge - personDiscount;
+
+        const finalAmount = personSubtotal + personGst + personServiceCharge - equalDiscountShare;
 
         return {
           name: person,
@@ -68,6 +77,7 @@ const BillModel = {
         };
       });
 
+      // Final structured response
       return {
         restaurantName,
         people: finalPeople,
@@ -88,6 +98,7 @@ const BillModel = {
     }
   },
 
+  // --- validation helpers ---
   validateRestaurant: (name) => {
     if (!name || name.trim().length === 0) {
       return { valid: false, error: 'Restaurant name is required' };
