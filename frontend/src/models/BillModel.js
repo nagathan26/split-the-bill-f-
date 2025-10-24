@@ -18,7 +18,7 @@ const BillModel = {
         const { name, price, sharedBy } = dish;
 
         if (!sharedBy || sharedBy.length === 0) {
-          throw new Error(`Dish "${name}" must be shared by at least one person`);
+          throw new Error(`Dis "${name}" must be shared by at least one person`);
         }
 
         const pricePerPerson = price / sharedBy.length;
@@ -132,5 +132,8 @@ const BillModel = {
     return { valid: true, error: null };
   },
 };
+
+
+
 
 export default BillModel;
